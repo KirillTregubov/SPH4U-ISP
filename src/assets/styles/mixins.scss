@@ -1,0 +1,5 @@
+@mixin container($background-color) {
+  background-color: $background-color;
+  border: 6px solid $background-color;
+  border-radius: 13px;
+}
