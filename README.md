@@ -1,4 +1,4 @@
-# circuits
+# Circuits
 
 ## Project setup
 ```
