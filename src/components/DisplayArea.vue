@@ -4,8 +4,8 @@
       <drag
         class="drag"
         :transfer-data="{ name: 'battery', origin: 'origin', data: '' }"
-        :image-x-offset="117.5"
-        :image-y-offset="90"
+        :image-x-offset="imageOffsetX"
+        :image-y-offset="imageOffsetY"
       >
         <Icon name="battery"/>
         <h4>Battery</h4>
@@ -16,8 +16,8 @@
       <drag
         class="drag"
         :transfer-data="{ name: 'light', origin: 'origin', data: '' }"
-        :image-x-offset="117.5"
-        :image-y-offset="90"
+        :image-x-offset="imageOffsetX"
+        :image-y-offset="imageOffsetY"
       >
         <Icon name="light"/>
         <h4>Light</h4>
@@ -28,8 +28,8 @@
       <drag
         class="drag"
         :transfer-data="{ name: 'buzzer', origin: 'origin', data: '' }"
-        :image-x-offset="117.5"
-        :image-y-offset="90"
+        :image-x-offset="imageOffsetX"
+        :image-y-offset="imageOffsetY"
       >
         <Icon name="buzzer"/>
         <h4>Buzzer</h4>
@@ -40,8 +40,8 @@
       <drag
         class="drag"
         :transfer-data="{ name: 'resistor', origin: 'origin', data: '' }"
-        :image-x-offset="117.5"
-        :image-y-offset="90"
+        :image-x-offset="imageOffsetX"
+        :image-y-offset="imageOffsetY"
       >
         <Icon name="resistor"/>
         <h4>Resistor</h4>
@@ -52,8 +52,8 @@
       <drag
         class="drag"
         :transfer-data="{ name: 'switchOpen', origin: 'origin', data: '' }"
-        :image-x-offset="117.5"
-        :image-y-offset="90"
+        :image-x-offset="imageOffsetX"
+        :image-y-offset="imageOffsetY"
       >
         <Icon name="switchOpen"/>
         <h4>Open Switch</h4>
@@ -64,8 +64,8 @@
       <drag
         class="drag"
         :transfer-data="{ name: 'switchClosed', origin: 'origin', data: '' }"
-        :image-x-offset="117.5"
-        :image-y-offset="90"
+        :image-x-offset="imageOffsetX"
+        :image-y-offset="imageOffsetY"
       >
         <Icon name="switchClosed"/>
         <h4>Closed Switch</h4>
@@ -76,8 +76,8 @@
       <drag
         class="drag"
         :transfer-data="{ name: 'voltmeter', origin: 'origin', data: '' }"
-        :image-x-offset="117.5"
-        :image-y-offset="90"
+        :image-x-offset="imageOffsetX"
+        :image-y-offset="imageOffsetY"
       >
         <Icon name="voltmeter"/>
         <h4>Voltmeter</h4>
@@ -88,8 +88,8 @@
       <drag
         class="drag"
         :transfer-data="{ name: 'ammeter', origin: 'origin', data: '' }"
-        :image-x-offset="117.5"
-        :image-y-offset="90"
+        :image-x-offset="imageOffsetX"
+        :image-y-offset="imageOffsetY"
       >
         <Icon name="ammeter"/>
         <h4>Ammeter</h4>
@@ -104,24 +104,15 @@
     <div id="display" ref="container" class="area">
       <drop id="drop" class="drop" @drop="handleDrop">
         <span class="connector">
-          <!-- <div class="connector" :key="connector.id" v-for="connector in connectors" :style="{left: connector.x + 'px', top: connector.y + 'px', width: connector.width + 'px', height: connector.height + 'px'}" > -->
-          <!-- <svg :style="{left: connector.x + 'px', top: connector.y + 'px'}"> -->
           <svg :key="connector.id" v-for="connector in connectors">
             <path
-              id="curve"
               :d="connector.style"
-              stroke="green"
-              stroke-width="4"
+              stroke="white"
+              stroke-width="3.8"
               stroke-linecap="round"
               fill="transparent"
             ></path>
           </svg>
-          <!-- <div class="sideline start"></div>
-        <div class="centerline">
-          <div class="centerlinetop"></div>
-          <div class="centerlinebottom"></div>
-        </div>
-          <div class="sideline end"></div>-->
         </span>
         <div
           class="component"
@@ -136,8 +127,8 @@
           <drag
             class="drag"
             :transfer-data="{ name: component.name, origin: 'display', id: component.id }"
-            :image-x-offset="84.5"
-            :image-y-offset="92.5"
+            :image-x-offset="imageOffsetX - 15"
+            :image-y-offset="imageOffsetY"
           >
             <div class="displayContainer" v-if="component.name === 'battery'">
               <div
@@ -196,6 +187,8 @@ export default {
   name: 'display-area',
   data: function () {
     return {
+      imageOffsetX: 50,
+      imageOffsetY: 35,
       components: [],
       connectors: [],
       currentOutput: 'Your latest action will be described here.',
@@ -210,11 +203,18 @@ export default {
     handleDrop (data, event) {
       let x =
         Math.round(
-          (event.pageX - this.$refs.container.getBoundingClientRect().left) / 10
+          (event.pageX -
+            this.$refs.container.getBoundingClientRect().left -
+            this.getScrollOffsets().x -
+            17.5) /
+            10
         ) * 10
       let y =
         Math.round(
-          (event.pageY - this.$refs.container.getBoundingClientRect().top) / 10
+          (event.pageY -
+            this.$refs.container.getBoundingClientRect().top -
+            this.getScrollOffsets().y) /
+            10
         ) * 10
       let verb = 'place'
       if (data.origin === 'display') verb = 'move'
@@ -233,7 +233,9 @@ export default {
           component.id !== data.id &&
           Math.abs(x - component.x) < 100 &&
           Math.abs(y - component.y) < 60
-        ) { overlap = true }
+        ) {
+          overlap = true
+        }
       }
 
       // add component
@@ -245,15 +247,15 @@ export default {
           data.name +
           ' as it overlapped with another component.'
       } else {
-        let id = uuid, leftConnection = '', rightConnection = ''
+        let id = uuid
+        let connections = {}
         if (data.origin === 'display') {
           let i = this.components
             .map(component => component.id)
-            .indexOf(data.id) // find index of your object
-          this.components.splice(i, 1) // remove it from array
+            .indexOf(data.id)
+          connections = this.components[i].connections
+          this.components.splice(i, 1)
           id = data.id
-          leftConnection = data.leftConnection
-          rightConnection = data.rightConnection
         } else {
           uuid++
         }
@@ -263,8 +265,7 @@ export default {
           name: data.name,
           x: x - 37.5,
           y: y - 37.5,
-          leftConnection: leftConnection,
-          rightConnection: rightConnection
+          connections: connections
         })
         if (data.origin === 'display') {
           // update connectors
@@ -293,73 +294,86 @@ export default {
       }
     },
     select (id, side, value) {
-      /* remove
       if (this.isRemoving) {
-        let removedStart = false
-        let removedAt
-        let startConnectors = this.connectors.filter(
-            elem => (elem.start === this.selected && elem.end === id)
-          )
-        console.log(startConnectors)
-        for (let i = 0; i < startConnectors.length; i++) {
-          if (this.components.find(component => component.id === startConnectors[i].end).leftConnection === this.selected && side === 'left') {
-            this.components.find(component => component.id === startConnectors[i].end).leftConnection = ''
-            removedStart = true
-            removedAt = i
-          } else if (this.components.find(component => component.id === startConnectors[i].end).rightConnection === this.selected && side === 'right') {
-            this.components.find(component => component.id === startConnectors[i].end).rightConnection = ''
-            removedStart = true
-            removedAt = i
-            console.log(i)
+        if (
+          ((this.components[this.selected].connections.left !== '' &&
+            this.sideSelected === 'left') ||
+            (this.components[this.selected].connections.right !== '' &&
+              this.sideSelected === 'right')) &&
+          ((this.components[id].connections.left !== '' && side === 'left') ||
+            (this.components[id].connections.right !== '' && side === 'right'))
+        ) {
+          let firstCheck, secondCheck, startNumber, endNumber
+          if (
+            this.sideSelected === 'left' &&
+            this.components[this.selected].connections.left === id
+          ) {
+            firstCheck = true
+            startNumber = 1
+            delete this.components[this.selected].connections.left
+          } else if (
+            this.sideSelected === 'right' &&
+            this.components[this.selected].connections.right === id
+          ) {
+            firstCheck = true
+            startNumber = 2
+            delete this.components[this.selected].connections.right
           }
-        }
-        if (removedStart) {
-          console.log('start')
-          this.connectors.splice(this.connectors.indexOf(startConnectors[removedAt])-1, 1)
-        }
 
-        let removedEnd = false
-        removedAt = ''
-        let endConnectors = this.connectors.filter(
-            elem => (elem.start === id && elem.end === this.selected)
-          )
-        for (let i = 0; i < endConnectors.length; i++) {
-           if (this.components.find(component => component.id === endConnectors[i].start).leftConnection === this.selected && side === 'left') {
-            this.components.find(component => component.id === endConnectors[i].start).leftConnection = ''
-            removedEnd = true
-            removedAt = i
-          } else if (this.components.find(component => component.id === endConnectors[i].start).rightConnection === this.selected && side === 'right') {
-            this.components.find(component => component.id === endConnectors[i].start).rightConnection = ''
-            removedEnd = true
-            removedAt = i
+          if (firstCheck) {
+            if (
+              side === 'left' &&
+              this.components[id].connections.left === this.selected
+            ) {
+              secondCheck = true
+              endNumber = 1
+              delete this.components[id].connections.left
+            } else if (
+              side === 'right' &&
+              this.components[id].connections.right === this.selected
+            ) {
+              secondCheck = true
+              endNumber = 2
+              delete this.components[id].connections.right
+            }
           }
-        }
-        if (removedEnd) {
-          console.log('end')
-          this.connectors.splice(this.connectors.indexOf(endConnectors[removedAt])-1, 1)
-        }
 
-        if (removedStart && removedEnd) console.log('error???')
-        if (removedStart || removedEnd) {
-          if (this.sideSelected === 'left') {
-            this.components.find(component => component.id === this.selected).leftConnection = ''
+          // delete connector
+          if (firstCheck && secondCheck) {
+            this.connectors.splice(
+              this.connectors.indexOf(
+                this.connectors.find(
+                  connector =>
+                    (connector.start === this.selected &&
+                      connector.startNumber === startNumber &&
+                      connector.endNumber === endNumber) ||
+                    (connector.start === id &&
+                      connector.startNumber === endNumber &&
+                      connector.endNumber === startNumber)
+                )
+              ),
+              1
+            )
+            this.currentOutput = 'Removed the connection successfully.'
           } else {
-            this.components.find(component => component.id === this.selected).rightConnection = ''
+            this.currentOutput = 'Unable to remove this connnection.'
           }
-          this.currentOutput = 'Removed the connection successfully.'
-        } else {
-          this.currentOutput = 'Unable to remove this connnection.'
+          this.isRemoving = false
+          this.selected = ''
+          this.sideSelected = ''
         }
-        this.isRemoving = false
-        this.selected = ''
-        this.sideSelected = ''
-      }
-      // check if need to remove
-      else if (!this.isRemoving && ((this.components.find(component => component.id === id).leftConnection !== '' && side === 'left') || (this.components.find(component => component.id === id).rightConnection !== '' && side === 'right'))) {
+      } else if (
+        !this.isRemoving &&
+        (this.components.find(component => component.id === id).connections
+          .length === 2 ||
+          ((this.components.find(component => component.id === id).connections
+          .hasOwnProperty('left')) &&
+            side === 'left'))
+      ) {
         this.selected = id
         this.sideSelected = side
         this.isRemoving = true
-      } else*/ if (this.selected === '') {
+      } else if (this.selected === '') {
         this.selected = id
         this.sideSelected = side
         this.valueSelected = value
@@ -367,6 +381,7 @@ export default {
         this.selected = ''
         this.sideSelected = ''
         this.valueSelected = ''
+        this.isRemoving = false
       } else if (this.selected === id) {
         this.currentOutput =
           'Cannot connect ' +
@@ -374,54 +389,47 @@ export default {
             .name +
           ' with itself.'
         this.selected = ''
+        this.sideSelected = ''
         this.valueSelected = ''
-      } else if (this.components.find(component => component.id === id).leftConnection !== '' && this.components.find(component => component.id === id).rightConnection !== '') {
-        this.currentOutput = 'Cannot select this component as it is connected on both sides.'
-        this.selected = ''
-        this.valueSelected = ''
-      /*} else if (
-        this.connectors.filter(
-          elem =>
-            (elem.start === this.selected && elem.end === id) ||
-            (elem.start === id && elem.end === this.selected)
-        ).length > 1
-      ) {
-        this.currentOutput =
-          'The ' +
-          this.components.find(component => component.id === this.selected)
-            .name +
-          ' and ' +
-          this.components.find(component => component.id === id).name +
-          ' are already connected in a loop.'
-        this.selected = ''
-        this.valueSelected = ''*/
+        this.isRemoving = false
       } else if (
         (value === '+' || value === '-') &&
         value === this.valueSelected
       ) {
+        // fix this in builders
         this.currentOutput = 'Cannot connect two of the same sides.'
         this.selected = ''
+        this.sideSelected = ''
         this.valueSelected = ''
-        // } else if (this.components[id].name === 'battery' && this.components[id].name === this.components[this.selected].name) {
-        //   this.currentOutput = 'Cannot connect two batteries together.'
-        //   this.selected = ''
-        //   this.valueSelected = ''
+        this.isRemoving = false
       } else {
+        let startLength, endLength
+        if (!this.components[this.selected].connections.hasOwnProperty('left')) {
+          this.components[this.selected].connections.left = id
+          startLength = 1
+        } else {
+          this.components[this.selected].connections.right = id
+          startLength = 2
+        }
+
+        if (!this.components[id].connections.hasOwnProperty('left')) {
+          this.components[id].connections.left = this.selected
+          endLength = 1
+        } else {
+          this.components[id].connections.right = this.selected
+          endLength = 2
+        }
+
         this.connectors.push({
-          number:
-            this.connectors.filter(
-              elem =>
-                (elem.start === this.selected && elem.end === id) ||
-                (elem.start === id && elem.end === this.selected)
-            ).length + 1,
+          startNumber: startLength,
+          endNumber: endLength,
           start: this.selected,
           end: id,
           x: '',
           y: '',
-          width: '',
-          height: '',
           style: ''
         })
+
         this.currentOutput =
           'A connection between ' +
           this.components.find(component => component.id === this.selected)
@@ -448,31 +456,41 @@ export default {
         )
 
         let p1x, p1y, p2x, p2y
-        
-        // start component
-        if (startObj.leftConnection === '' || connector.number === 2) {
+        if (
+          startObj.connections.left === endObj.id &&
+          connector.startNumber === 1
+        ) {
           p1x = startObj.x + 15
           connector.x = p1x
-          p1y = startObj.y + 37.5
+          p1y = startObj.y + 38
           connector.y = p1x
-          startObj.leftConnection = endObj.id
-        } else {
+        } else if (
+          startObj.connections.right === endObj.id &&
+          connector.startNumber === 2
+        ) {
           p1x = startObj.x + 90
           connector.x = p1x
-          p1y = startObj.y + 37.5
+          p1y = startObj.y + 38
           connector.y = p1x
-          startObj.rightConnection = endObj.id
+        } else {
+          window.alert('ERROR')
         }
 
         // end component
-        if (endObj.leftConnection === '' || connector.number === 2) {
+        if (
+          endObj.connections.left === startObj.id &&
+          connector.endNumber === 1
+        ) {
           p2x = endObj.x + 15
-          p2y = endObj.y + 37.5
-          endObj.leftConnection = startObj.id
-        } else {
+          p2y = endObj.y + 38
+        } else if (
+          endObj.connections.right === startObj.id &&
+          connector.endNumber === 2
+        ) {
           p2x = endObj.x + 90
-          p2y = endObj.y + 37.5
-          endObj.rightConnection = startObj.id
+          p2y = endObj.y + 38
+        } else {
+          window.alert('ERROR')
         }
 
         let mpx = (p2x + p1x) * 0.5
@@ -499,6 +517,24 @@ export default {
           p2y
         // this.connectors[i] = connector;
       }
+    },
+    getScrollOffsets () {
+      var doc = document
+      var w = window
+      var x, y, docEl
+
+      if (typeof w.pageYOffset === 'number') {
+        x = w.pageXOffset
+        y = w.pageYOffset
+      } else {
+        docEl =
+          doc.compatMode && doc.compatMode === 'CSS1Compat'
+            ? doc.documentElement
+            : doc.body
+        x = docEl.scrollLeft
+        y = docEl.scrollTop
+      }
+      return { x: x, y: y }
     }
     /*
     updateConnectors () {
@@ -714,7 +750,7 @@ export default {
 
 #origin {
   svg {
-    margin: 0 15px;
+    margin: 0 18px;
   }
   h4 {
     margin: 0 0 15px 0;
