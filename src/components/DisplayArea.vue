@@ -248,7 +248,10 @@ export default {
           ' as it overlapped with another component.'
       } else {
         let id = uuid
-        let connections = {}
+        let connections = {
+          left: [],
+          right: []
+        }
         if (data.origin === 'display') {
           let i = this.components
             .map(component => component.id)
@@ -294,7 +297,7 @@ export default {
       }
     },
     select (id, side, value) {
-      if (this.isRemoving) {
+      /*if (this.isRemoving) {
         if (
           ((this.components[this.selected].connections.left !== '' &&
             this.sideSelected === 'left') ||
@@ -316,7 +319,7 @@ export default {
             this.components[this.selected].connections.right === id
           ) {
             firstCheck = true
-            startNumber = 2
+            startNumber = 2 
             delete this.components[this.selected].connections.right
           }
 
@@ -362,21 +365,18 @@ export default {
           this.selected = ''
           this.sideSelected = ''
         }
+      } else*/
+      if (this.selected === '') {
+        this.selected = id
+        this.sideSelected = side
+        this.valueSelected = value
       } else if (
         !this.isRemoving &&
-        (this.components.find(component => component.id === id).connections
-          .length === 2 ||
-          ((this.components.find(component => component.id === id).connections
-          .hasOwnProperty('left')) &&
-            side === 'left'))
+        this.hasConnection(id, side)
       ) {
         this.selected = id
         this.sideSelected = side
         this.isRemoving = true
-      } else if (this.selected === '') {
-        this.selected = id
-        this.sideSelected = side
-        this.valueSelected = value
       } else if (this.selected === id && this.sideSelected === side) {
         this.selected = ''
         this.sideSelected = ''
@@ -404,19 +404,19 @@ export default {
         this.isRemoving = false
       } else {
         let startLength, endLength
-        if (!this.components[this.selected].connections.hasOwnProperty('left')) {
-          this.components[this.selected].connections.left = id
+        if (this.sideSelected === 'left') {
+          this.components[this.selected].connections.left.push(id)
           startLength = 1
         } else {
-          this.components[this.selected].connections.right = id
+          this.components[this.selected].connections.right.push(id)
           startLength = 2
         }
 
-        if (!this.components[id].connections.hasOwnProperty('left')) {
-          this.components[id].connections.left = this.selected
+        if (side === 'left') {
+          this.components[id].connections.left.push(this.selected)
           endLength = 1
         } else {
-          this.components[id].connections.right = this.selected
+          this.components[id].connections.right.push(this.selected)
           endLength = 2
         }
 
@@ -456,18 +456,13 @@ export default {
         )
 
         let p1x, p1y, p2x, p2y
-        if (
-          startObj.connections.left === endObj.id &&
-          connector.startNumber === 1
-        ) {
+        // start component
+        if (connector.startNumber === 1) {
           p1x = startObj.x + 15
           connector.x = p1x
           p1y = startObj.y + 38
           connector.y = p1x
-        } else if (
-          startObj.connections.right === endObj.id &&
-          connector.startNumber === 2
-        ) {
+        } else if (connector.startNumber === 2) {
           p1x = startObj.x + 90
           connector.x = p1x
           p1y = startObj.y + 38
@@ -477,16 +472,10 @@ export default {
         }
 
         // end component
-        if (
-          endObj.connections.left === startObj.id &&
-          connector.endNumber === 1
-        ) {
+        if (connector.endNumber === 1) {
           p2x = endObj.x + 15
           p2y = endObj.y + 38
-        } else if (
-          endObj.connections.right === startObj.id &&
-          connector.endNumber === 2
-        ) {
+        } else if (connector.endNumber === 2) {
           p2x = endObj.x + 90
           p2y = endObj.y + 38
         } else {
@@ -515,8 +504,14 @@ export default {
           p2x +
           ' ' +
           p2y
-        // this.connectors[i] = connector;
       }
+    },
+    hasConnection(id, side) {
+       this.connectors.filter(
+          elem =>
+            (elem.start === this.selected && elem.end === id) ||
+            (elem.start === id && elem.end === this.selected)
+        ).length
     },
     getScrollOffsets () {
       var doc = document
@@ -536,78 +531,6 @@ export default {
       }
       return { x: x, y: y }
     }
-    /*
-    updateConnectors () {
-      for (let i = 0; i < this.connectors.length; i++) {
-        let connector = this.connectors[i]
-        let startObj = this.components.find(component => component.id === connector.start)
-        let endObj = this.components.find(component => component.id === connector.end)
-
-        // beside
-        if (startObj.y === endObj.y) {
-          console.log('beside')
-        }
-        // above or below
-        else {
-          console.log('above or below')
-
-          // determine orientation
-          let leftObj = startObj.x < endObj.x ? startObj : endObj
-          let rightObj = startObj === leftObj ? endObj : startObj
-
-          if (connector.number === 1) {
-            // left
-
-          } else {
-            // right
-          }
-        }
-
-        if (Math.abs(startObj.x - endObj.x) > 100) {
-          // x
-          connector.x = (startObj.x < endObj.x ? startObj.x : endObj.x) + 37.5
-          // y
-          connector.y = (startObj.y < endObj.y ? startObj.y : endObj.y) - 2.5
-          // height
-          connector.height = Math.abs(startObj.y - endObj.y) + 5
-          // width
-          connector.width = Math.abs(startObj.x - endObj.x) - 75
-        } else {
-
-        }
-        // console.log(this.connectors.filter(elem => (elem.start === connector.start && elem.end === connector.end) || (elem.start === connector.end && elem.end === connector.start)))
-
-        this.currentOutput = 'The ' + startObj.name + ' and ' + endObj.name + ' were connected successfully.'
-      }
-
-      // drawConnector() {
-
-      //   const getCenterStyle = (v, h) => {
-      //     return {
-      //       height: (height / 2) - borderWidth,
-      //       width: `${widthAndMargin}px`,
-      //       [`margin${h}`]: `${widthAndMargin}px`,
-      //       [`border${v}${h}Width`]: borderWidth,
-      //       [`border${h}Width`]: borderWidth,
-      //       [`border${v}Width`]: v === 'Top'
-      //         ? Math.min(borderWidth, borderRadius)
-      //         : borderWidth,
-      //       [`border${v}${h}Radius`]: `${borderRadius}px${shouldSmooth ? ' ' + (borderRadius / 2) + 'px' : ''}`
-      //     };
-      //   };
-
-      //   this.setState({
-      //     top,
-      //     height,
-      //     left,
-      //     width,
-      //     startLineStyle: { alignSelf: `flex-${leftIsHigher ? 'start' : 'end'}` },
-      //     centerLineTopStyle: getCenterStyle('Top', leftIsHigher ? 'Right' : 'Left'),
-      //     centerLineBottomStyle: getCenterStyle('Bottom', leftIsHigher ? 'Left' : 'Right'),
-      //     endLineStyle: { alignSelf: `flex-${leftIsHigher ? 'end' : 'start'}` }
-      //   });
-      // }
-    } */
   },
   components: {
     Icon,
