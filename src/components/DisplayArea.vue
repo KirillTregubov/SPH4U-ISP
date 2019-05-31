@@ -193,7 +193,6 @@ export default {
       connectors: [],
       currentOutput: 'Your latest action will be described here.',
       selected: '',
-      isRemoving: false,
       sideSelected: '',
       valueSelected: '',
       visibleSelectors: ''
@@ -284,8 +283,30 @@ export default {
         this.currentOutput =
           'Unable to delete the ' + data.name + ' as it was never placed.'
       } else {
-        let i = this.components.map(component => component.id).indexOf(data.id) // find index of your object
-        this.components.splice(i, 1) // remove it from array
+        let index = this.components.map(component => component.id).indexOf(data.id) // find index of your object
+
+        // delete left and right connectors
+        var connectors = this.connectors.filter(
+          connector =>
+            (connector.start === index || connector.end === index))
+        for (let i = 0; i < connectors.length; i++) {
+          if (connectors[i].start === index) {
+            // delete start connector references
+            this.components[connectors[i].end].connections.left.splice(this.components[connectors[i].end].connections.left.indexOf(index), 1)
+            this.components[connectors[i].end].connections.right.splice(this.components[connectors[i].end].connections.right.indexOf(index), 1)
+            // delete start connector
+            this.connectors.splice(this.connectors.indexOf(connectors[i]), 1)
+          } else {
+            // delete end connector references
+            this.components[connectors[i].start].connections.left.splice(this.components[connectors[i].start].connections.left.indexOf(index), 1)
+            this.components[connectors[i].start].connections.right.splice(this.components[connectors[i].start].connections.right.indexOf(index), 1)
+            // delete end connector
+            this.connectors.splice(this.connectors.indexOf(connectors[i]), 1)
+          }
+        }
+
+        // delete component
+        this.components.splice(index, 1) // remove it from array
         this.currentOutput = 'The ' + data.name + ' was deleted successfully.'
       }
     },
@@ -297,91 +318,54 @@ export default {
       }
     },
     select (id, side, value) {
-      /*if (this.isRemoving) {
-        if (
-          ((this.components[this.selected].connections.left !== '' &&
-            this.sideSelected === 'left') ||
-            (this.components[this.selected].connections.right !== '' &&
-              this.sideSelected === 'right')) &&
-          ((this.components[id].connections.left !== '' && side === 'left') ||
-            (this.components[id].connections.right !== '' && side === 'right'))
-        ) {
-          let firstCheck, secondCheck, startNumber, endNumber
-          if (
-            this.sideSelected === 'left' &&
-            this.components[this.selected].connections.left === id
-          ) {
-            firstCheck = true
-            startNumber = 1
-            delete this.components[this.selected].connections.left
-          } else if (
-            this.sideSelected === 'right' &&
-            this.components[this.selected].connections.right === id
-          ) {
-            firstCheck = true
-            startNumber = 2 
-            delete this.components[this.selected].connections.right
-          }
-
-          if (firstCheck) {
-            if (
-              side === 'left' &&
-              this.components[id].connections.left === this.selected
-            ) {
-              secondCheck = true
-              endNumber = 1
-              delete this.components[id].connections.left
-            } else if (
-              side === 'right' &&
-              this.components[id].connections.right === this.selected
-            ) {
-              secondCheck = true
-              endNumber = 2
-              delete this.components[id].connections.right
-            }
-          }
-
-          // delete connector
-          if (firstCheck && secondCheck) {
-            this.connectors.splice(
-              this.connectors.indexOf(
-                this.connectors.find(
-                  connector =>
-                    (connector.start === this.selected &&
-                      connector.startNumber === startNumber &&
-                      connector.endNumber === endNumber) ||
-                    (connector.start === id &&
-                      connector.startNumber === endNumber &&
-                      connector.endNumber === startNumber)
-                )
-              ),
-              1
-            )
-            this.currentOutput = 'Removed the connection successfully.'
-          } else {
-            this.currentOutput = 'Unable to remove this connnection.'
-          }
-          this.isRemoving = false
-          this.selected = ''
-          this.sideSelected = ''
-        }
-      } else*/
       if (this.selected === '') {
         this.selected = id
         this.sideSelected = side
         this.valueSelected = value
       } else if (
-        !this.isRemoving &&
+        this.selected !== '' &&
         this.hasConnection(id, side)
       ) {
-        this.selected = id
-        this.sideSelected = side
-        this.isRemoving = true
+        this.currentOutput = 'Removed connection between ' + this.components.find(component => component.id === this.selected)
+          .name +
+          ' and ' +
+          this.components.find(component => component.id === id).name +
+          '.'
+
+        // remove connector
+        var startNumber, endNumber
+        if (this.sideSelected === 'right') startNumber = 2
+        else startNumber = 1
+        if (side === 'right') endNumber = 2
+        else endNumber = 1
+        this.connectors.splice(
+          this.connectors.indexOf(
+            this.connectors.find(
+              connector =>
+                connector.start === this.selected &&
+                connector.end === id &&
+                connector.startNumber === startNumber &&
+                connector.endNumber === endNumber
+            )
+          ),
+          1
+        )
+
+        // remove connection in component
+        var startConnection = this.components[this.selected].connections
+        var endConnection = this.components[id].connections
+        if (startNumber === 2) startConnection.right.splice(startConnection.right.indexOf(id), 1)
+        else startConnection.left.splice(startConnection.left.indexOf(id), 1)
+        if (endNumber === 2) endConnection.right.splice(endConnection.right.indexOf(this.selected), 1)
+        else endConnection.left.splice(endConnection.left.indexOf(this.selected), 1)
+
+        this.selected = ''
+        this.sideSelected = ''
+        this.valueSelected = ''
       } else if (this.selected === id && this.sideSelected === side) {
         this.selected = ''
         this.sideSelected = ''
         this.valueSelected = ''
-        this.isRemoving = false
       } else if (this.selected === id) {
         this.currentOutput =
           'Cannot connect ' +
@@ -391,7 +375,6 @@ export default {
         this.selected = ''
         this.sideSelected = ''
         this.valueSelected = ''
-        this.isRemoving = false
       } else if (
         (value === '+' || value === '-') &&
         value === this.valueSelected
@@ -401,7 +384,6 @@ export default {
         this.selected = ''
         this.sideSelected = ''
         this.valueSelected = ''
-        this.isRemoving = false
       } else {
         let startLength, endLength
         if (this.sideSelected === 'left') {
@@ -443,7 +425,13 @@ export default {
 
         // update connectors
         this.updateConnectors()
+
+        // update physics
+        this.updatePhysics()
       }
+    },
+    updatePhysics () {
+      console.log('phys')
     },
     updateConnectors () {
       for (let i = 0; i < this.connectors.length; i++) {
@@ -506,12 +494,21 @@ export default {
           p2y
       }
     },
-    hasConnection(id, side) {
-       this.connectors.filter(
-          elem =>
-            (elem.start === this.selected && elem.end === id) ||
+    hasConnection (id, side) {
+      var connectionAmount = this.connectors.filter(
+        elem =>
+          (elem.start === this.selected && elem.end === id) ||
             (elem.start === id && elem.end === this.selected)
-        ).length
+      ).length
+
+      var startSideConnections, endSideConnections
+      if (this.sideSelected === 'right') startSideConnections = this.components[this.selected].connections.right
+      else startSideConnections = this.components[this.selected].connections.left
+      if (side === 'right') endSideConnections = this.components[id].connections.right
+      else endSideConnections = this.components[id].connections.left
+
+      if (connectionAmount > 0 && startSideConnections.includes(id) && endSideConnections.includes(this.selected)) return true
+      else return false
     },
     getScrollOffsets () {
       var doc = document
