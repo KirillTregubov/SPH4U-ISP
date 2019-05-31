@@ -199,116 +199,8 @@ export default {
     }
   },
   methods: {
-    handleDrop (data, event) {
-      let x =
-        Math.round(
-          (event.pageX -
-            this.$refs.container.getBoundingClientRect().left -
-            this.getScrollOffsets().x -
-            17.5) /
-            10
-        ) * 10
-      let y =
-        Math.round(
-          (event.pageY -
-            this.$refs.container.getBoundingClientRect().top -
-            this.getScrollOffsets().y) /
-            10
-        ) * 10
-      let verb = 'place'
-      if (data.origin === 'display') verb = 'move'
-
-      // snap extremes
-      if (x < 50) x = 50
-      if (y < 40) y = 40
-      if (x > 950) x = 950
-      if (y > 560) y = 560
-
-      // check for overlap
-      let overlap = false
-      for (let i = 0; i < this.components.length; i++) {
-        let component = this.components[i]
-        if (
-          component.id !== data.id &&
-          Math.abs(x - component.x) < 100 &&
-          Math.abs(y - component.y) < 60
-        ) {
-          overlap = true
-        }
-      }
-
-      // add component
-      if (overlap) {
-        this.currentOutput =
-          'Unable to ' +
-          verb +
-          ' the ' +
-          data.name +
-          ' as it overlapped with another component.'
-      } else {
-        let id = uuid
-        let connections = {
-          left: [],
-          right: []
-        }
-        if (data.origin === 'display') {
-          let i = this.components
-            .map(component => component.id)
-            .indexOf(data.id)
-          connections = this.components[i].connections
-          this.components.splice(i, 1)
-          id = data.id
-        } else {
-          uuid++
-        }
-
-        this.components.push({
-          id: id,
-          name: data.name,
-          x: x - 37.5,
-          y: y - 37.5,
-          connections: connections
-        })
-        if (data.origin === 'display') {
-          // update connectors
-          this.updateConnectors()
-        }
-
-        this.currentOutput =
-          'The ' + data.name + ' was ' + verb + 'd successfully.'
-      }
-    },
-    handleTrash (data, event) {
-      if (data.origin === 'origin') {
-        this.currentOutput =
-          'Unable to delete the ' + data.name + ' as it was never placed.'
-      } else {
-        let index = this.components.map(component => component.id).indexOf(data.id) // find index of your object
-
-        // delete left and right connectors
-        var connectors = this.connectors.filter(
-          connector =>
-            (connector.start === index || connector.end === index))
-        for (let i = 0; i < connectors.length; i++) {
-          if (connectors[i].start === index) {
-            // delete start connector references
-            this.components[connectors[i].end].connections.left.splice(this.components[connectors[i].end].connections.left.indexOf(index), 1)
-            this.components[connectors[i].end].connections.right.splice(this.components[connectors[i].end].connections.right.indexOf(index), 1)
-            // delete start connector
-            this.connectors.splice(this.connectors.indexOf(connectors[i]), 1)
-          } else {
-            // delete end connector references
-            this.components[connectors[i].start].connections.left.splice(this.components[connectors[i].start].connections.left.indexOf(index), 1)
-            this.components[connectors[i].start].connections.right.splice(this.components[connectors[i].start].connections.right.indexOf(index), 1)
-            // delete end connector
-            this.connectors.splice(this.connectors.indexOf(connectors[i]), 1)
-          }
-        }
-
-        // delete component
-        this.components.splice(index, 1) // remove it from array
-        this.currentOutput = 'The ' + data.name + ' was deleted successfully.'
-      }
+    updatePhysics () {
+      console.log('phys')
     },
     showSelectors (id, isLeaving) {
       if (!isLeaving) {
@@ -430,8 +322,116 @@ export default {
         this.updatePhysics()
       }
     },
-    updatePhysics () {
-      console.log('phys')
+    handleDrop (data, event) {
+      let x =
+        Math.round(
+          (event.pageX -
+            this.$refs.container.getBoundingClientRect().left -
+            this.getScrollOffsets().x -
+            17.5) /
+            10
+        ) * 10
+      let y =
+        Math.round(
+          (event.pageY -
+            this.$refs.container.getBoundingClientRect().top -
+            this.getScrollOffsets().y) /
+            10
+        ) * 10
+      let verb = 'place'
+      if (data.origin === 'display') verb = 'move'
+
+      // snap extremes
+      if (x < 50) x = 50
+      if (y < 40) y = 40
+      if (x > 950) x = 950
+      if (y > 560) y = 560
+
+      // check for overlap
+      let overlap = false
+      for (let i = 0; i < this.components.length; i++) {
+        let component = this.components[i]
+        if (
+          component.id !== data.id &&
+          Math.abs(x - component.x) < 100 &&
+          Math.abs(y - component.y) < 60
+        ) {
+          overlap = true
+        }
+      }
+
+      // add component
+      if (overlap) {
+        this.currentOutput =
+          'Unable to ' +
+          verb +
+          ' the ' +
+          data.name +
+          ' as it overlapped with another component.'
+      } else {
+        let id = uuid
+        let connections = {
+          left: [],
+          right: []
+        }
+        if (data.origin === 'display') {
+          let i = this.components
+            .map(component => component.id)
+            .indexOf(data.id)
+          connections = this.components[i].connections
+          this.components.splice(i, 1)
+          id = data.id
+        } else {
+          uuid++
+        }
+
+        this.components.push({
+          id: id,
+          name: data.name,
+          x: x - 37.5,
+          y: y - 37.5,
+          connections: connections
+        })
+        if (data.origin === 'display') {
+          // update connectors
+          this.updateConnectors()
+        }
+
+        this.currentOutput =
+          'The ' + data.name + ' was ' + verb + 'd successfully.'
+      }
+    },
+    handleTrash (data, event) {
+      if (data.origin === 'origin') {
+        this.currentOutput =
+          'Unable to delete the ' + data.name + ' as it was never placed.'
+      } else {
+        let index = this.components.map(component => component.id).indexOf(data.id) // find index of your object
+
+        // delete left and right connectors
+        var connectors = this.connectors.filter(
+          connector =>
+            (connector.start === index || connector.end === index))
+        for (let i = 0; i < connectors.length; i++) {
+          if (connectors[i].start === index) {
+            // delete start connector references
+            this.components[connectors[i].end].connections.left.splice(this.components[connectors[i].end].connections.left.indexOf(index), 1)
+            this.components[connectors[i].end].connections.right.splice(this.components[connectors[i].end].connections.right.indexOf(index), 1)
+            // delete start connector
+            this.connectors.splice(this.connectors.indexOf(connectors[i]), 1)
+          } else {
+            // delete end connector references
+            this.components[connectors[i].start].connections.left.splice(this.components[connectors[i].start].connections.left.indexOf(index), 1)
+            this.components[connectors[i].start].connections.right.splice(this.components[connectors[i].start].connections.right.indexOf(index), 1)
+            // delete end connector
+            this.connectors.splice(this.connectors.indexOf(connectors[i]), 1)
+          }
+        }
+
+        // delete component
+        this.components.splice(index, 1) // remove it from array
+        this.currentOutput = 'The ' + data.name + ' was deleted successfully.'
+      }
     },
     updateConnectors () {
       for (let i = 0; i < this.connectors.length; i++) {
