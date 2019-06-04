@@ -1,5 +1,6 @@
 <template>
   <div id="about">
+    <h1>Current Version: 1.0 release (alpha)</h1>
     <h1>Professor Circuit was created by <span>Kirill Tregubov</span>, and is the final project for his high school physics course (SPH4U)</h1>
   </div>
 </template>
